@@ -1,11 +1,9 @@
-interiaMain = 'http://programtv.interia.pl'
-stations = interiaMain + '/lista-stacji/programy-wszystkie,pid,0,lid,1'
 mainUrl = 'http://weeb.tv'
 playerUrl = mainUrl + '/api/setplayer'
 apiUrl = mainUrl + '/api/getChannelList'
 accountUrl = mainUrl + '/account'
 loginUrl = accountUrl + '/login'
-iconUrl = 'http://static2.weeb.tv/ci/'
+iconUrl = 'http://static.weeb.tv/logos/'
 player = 'http://old.weeb.tv/static2/player.swf'
 HOST = 'XBMC'
 multiplier = 1000 * 60

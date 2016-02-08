@@ -5,7 +5,6 @@ from re import findall
 from copy import copy
 from operator import itemgetter
 
-epg = SharedCodeService.epg
 const = SharedCodeService.constants
 api = SharedCodeService.api
 
@@ -35,7 +34,7 @@ def MainMenu():
     oc.add(DirectoryObject(key=Callback(LiveChannels,page=1,action='live'),title=L("MENU_LIVE_CHANNELS")))
     if Dict['fav']:    
         oc.add(DirectoryObject(key=Callback(LiveChannels,page=1,action='fav'),title=L("MENU_FAVOURITE_CHANNELS"),thumb=R('favorites.png')))
-    oc.add(DirectoryObject(key=Callback(ManageRecordings),title=L("MENU_MANAGE_RECORDINGS"),thumb=R('record.png')))
+    #oc.add(DirectoryObject(key=Callback(ManageRecordings),title=L("MENU_MANAGE_RECORDINGS"),thumb=R('record.png')))
     if Dict['loggedIn']:
         oc.add(DirectoryObject(key=Callback(MyAccount),title=L("MENU_MY_ACCOUNT")))
     oc.add(PrefsObject(title=L("SETTINGS")))
@@ -73,40 +72,10 @@ def LiveChannels(page,action):
             lChannelsToShow = lOrder[(int(page)-1)*int(chPerPage):int(chPerPage)*int(page)]
         oc.title2 = '{} Channels {}/{}'.format(sType,page,pages)
   
-
-    #get EPG data
     bContinue = True
-    '''
-    if Prefs['epgToggle']:
-        dEpg = epg.GetEpgChannels()
-        for channel in lChannelsToShow:
-            name = None
-            for chname in dEpg:
-                if api.NormaliseTitle(dEpg[chname]['title']) == channel:
-                    name = chname
-                    break
-            if name:
-                if channel in Dict['channels']:
-                    Dict['channels'][channel]['epg']  = dEpg[chname]
-                    Thread.Event(str(channel))
-                    Thread.Create(GetEpgProgramInfo,name=channel)
-                    sleep(0.25)
-                else:
-                    bContinue = False
-                    #remove the no-longer-existing favourite now
-    '''
+
     if bContinue:
         for channel in lChannelsToShow:
-            '''
-            Thread.Wait(str(channel),0.25)
-            if Prefs['epgToggle'] and 'epg' in Dict['channels'][channel]:
-                pid = None
-                if 'on_air' in Dict['channels'][channel]['epg']:
-                    pid = Dict['channels'][channel]['epg']['on_air']
-                    channelTitle = '{}: {}'.format(Dict['channels'][channel]['channel_title'],Dict['channels'][channel]['epg']['programs'][pid]['title'] if pid else '')
-                    channelDesc = Dict['channels'][channel]['epg']['programs'][pid]['description'] if pid else ''
-            else:
-            '''
             if channel in Dict['channels']:
                 channelTitle = unicode(Dict['channels'][channel]['channel_title'])
                 channelDesc = unicode(Dict['channels'][channel]['channel_description'])
@@ -114,13 +83,10 @@ def LiveChannels(page,action):
                 if not channelTitle:
                     channelTitle = channelName
                 channelCid = Dict['channels'][channel]['cid']
-                channelImage = Dict['channels'][channel]['channel_image']
-
+                channelImage = Dict['channels'][channel]['channel_logo_url']
                 channelHost = Dict['channels'][channel]['user_name']
                 channelTags = Dict['channels'][channel]['channel_tags']
-                thumb = const.iconUrl + "no_video.png"
-                if channelImage == '1':
-                    thumb = const.iconUrl + channelCid + ".jpg"
+                thumb = channelImage
                 oc.add(DirectoryObject(key=Callback(ChannelMenu,cid=channel),title=channelTitle,thumb=thumb,summary=channelDesc))
             else:
                 oc.add(DirectoryObject(key=Callback(ChannelMenu,cid=channel),title=channel,summary='Channel no longer available'))
@@ -134,8 +100,9 @@ def LiveChannels(page,action):
     return oc
 
 
-@route('/video/weebtv/channels/{cid}')
+@route('/video/weebtv/channel/{cid}')
 def ChannelMenu(cid):
+    Log('CID2: {}'.format(cid))
     oc = ObjectContainer()
     oc.no_cache = True
     if cid in Dict['channels']:
@@ -146,57 +113,29 @@ def ChannelMenu(cid):
         duration = None
         originally_available_at = None
         show = None
-        '''
-        if Prefs['epgToggle'] and 'epg' in channelDict:
-            pid = channelDict['epg']['on_air']
-            title = channelDict['epg']['programs'][pid]['title']
-            summary = channelDict['epg']['programs'][pid]['description']
-            duration = channelDict['epg']['programs'][pid]['duration']
-            thumb = channelDict['epg']['programs'][pid]['image']
-            if channelDict['epg']['programs'][pid]['episode_title']:
-                show = title
-                title = '{}: {}'.format(show,channelDict['epg']['programs'][pid]['episode_title'])
-        else:
-        '''
+
         title = unicode(channelDict['channel_title'])
         summary = unicode(channelDict['channel_description'])
         thumb = channelDict['channel_image']
         show = title
-        #oc.add(EpisodeObject(
-        #    url = '{}/channel/{}'.format(const.mainUrl,channelDict['channel_name']),
-        #    title = title,
-        #    summary = summary,
-        #    duration = duration,
-        #    show = show,
-        #    source_title = unicode(channelDict['channel_title']),
-        #    originally_available_at = originally_available_at,
-        #    thumb = thumb))
-        
-        params = api.GetLinkInfo(channelDict['cid'],channelDict['multibitrate'],Prefs['username'],Prefs['password'])
-        pageUrl = ' pageUrl=token'
-        swf_url = params['ticket'] + pageUrl
-        oc.add(VideoClipObject(
-            key = RTMPVideoURL(    
-                url = params['rtmpLink'],
-                clip = params['playPath'] + ' swfUrl=' + swf_url,
-                app = '{}/{}'.format(params['playPath'],channelDict['cid']),
-                live = True),
-            rating_key = params['playPath'],
-            source_title = unicode(channelDict['channel_title']),
-            duration = duration,
+        oc.add(EpisodeObject(
+            url = '{}/channel/{}'.format(const.mainUrl,channelDict['channel_name']),
             title = title,
-            thumb = thumb,
-            summary = summary))
-
-        oc.add(PopupDirectoryObject(key=Callback(RecordMenu,cid=cid),title=L("SUBMENU_RECORD"),summary=L("SUBMENU_RECORD_SUMMARY")))
+            summary = summary,
+            duration = duration,
+            show = show,
+            source_title = unicode(channelDict['channel_title']),
+            originally_available_at = originally_available_at,
+            thumb = thumb))
+        #oc.add(PopupDirectoryObject(key=Callback(RecordMenu,cid=cid),title=L("SUBMENU_RECORD"),summary=L("SUBMENU_RECORD_SUMMARY")))
         #oc.add(DirectoryObject(key=Callback(ShowChannelEpg,cid=cid),title=L("SUBMENU_EPG"),summary=L("SUBMENU_EPG_SUMMARY")))
     if Dict['fav']: 
         if cid in Dict['fav']:    
-            oc.add(DirectoryObject(key=Callback(FavRemoveChannel,cid=cid),title=L("SUBMENU_REMOVE")))
+            oc.add(DirectoryObject(key=Callback(FavRemoveChannel,cid=cid),title=L("SUBMENU_REMOVE"),thumb=R('favorites.png')))
         else:
-            oc.add(DirectoryObject(key=Callback(FavAddChannel,cid=cid),title=L("SUBMENU_ADD"))) 
+            oc.add(DirectoryObject(key=Callback(FavAddChannel,cid=cid),title=L("SUBMENU_ADD"),thumb=R('favorites.png')))
     else:
-        oc.add(DirectoryObject(key=Callback(FavAddChannel,cid=cid),title=L("SUBMENU_ADD")))    
+        oc.add(DirectoryObject(key=Callback(FavAddChannel,cid=cid),title=L("SUBMENU_ADD"),thumb=R('favorites.png')))
     return oc
 
 
@@ -312,74 +251,6 @@ def Scanner(interval=30):
                     
         sleep(interval)
         
-'''
-@route('/video/weebtv/channels/{cid}/epg')
-def ShowChannelEpg(cid):
-    oc = ObjectContainer()
-    oc.no_cache = True
-    chDict = Dict['channels'][cid]
-    epgDict = chDict['epg']['programs']
-    oc.title2 = chDict['channel_title']
-    Log(chDict)
-    for program in sorted(epgDict):
-        Thread.Event(str(epgDict[program]['path'].split(',')[-1]))
-        #Thread.CreateTimer(0.1,GetProgramEpg,cid=cid,pid=program)
-        Thread.Create(GetProgramEpg,cid=cid,pid=program)
-        #sleep(0.1)
-
-    for program in sorted(epgDict):
-        Thread.Wait(str(epgDict[program]['path'].split(',')[-1]))
-        show = None
-        season = None
-        if epgDict[program]['season']:
-            season = int(epgDict[program]['season'])
-        title = epgDict[program]['title']
-        if epgDict[program]['episode_title']:
-            show = title
-            title = show + ': ' + epgDict[program]['episode_title']
-        elif epgDict[program]['original_title']:
-            title = title + ' (' + epgDict[program]['original_title'] + ')'
-        oc.add(EpisodeObject(
-                key = Callback(DoNothing),
-                rating_key = epgDict[program]['path'].split(',')[-1],
-                title = title,
-                show = show,
-                summary = epgDict[program]['description'],
-                thumb = epgDict[program]['image'],
-                season = season)
-        )
-    return oc
-
-
-def GetProgramEpg(cid,pid):
-    path = Dict['channels'][cid]['epg']['programs'][pid]['path']
-    Thread.Block(str(path.split(',')[-1]))
-    Log('Getting info for {}'.format(path))
-    dEpg = epg.GetEpgProgramInfo(path=path)
-    for item in dEpg:
-        Dict['channels'][cid]['epg']['programs'][pid][item] = dEpg[item]
-    Thread.Unblock(str(path.split(',')[-1]))
-
-
-def GetEpgProgramInfo(name):
-    Thread.Block(name)
-    dPrograms = epg.GetEpgPrograms(Dict['channels'][name]['epg']['path'])
-    Dict['channels'][name]['epg']['programs'] = dPrograms
-    onAir = None
-    for program in dPrograms:
-        if dPrograms[program]['now'] == True:
-            onAir = program
-            break
-    if not onAir:
-        onAir = sorted(dPrograms)[0]
-    Dict['channels'][name]['epg']['on_air'] = onAir
-    path = Dict['channels'][name]['epg']['programs'][onAir]['path']
-    dEpg = epg.GetEpgProgramInfo(path=path)
-    for item in dEpg:
-        Dict['channels'][name]['epg']['programs'][onAir][item] = dEpg[item]    
-    Thread.Unblock(name)
-    Log('Leaving thread for {}'.format(name))
-'''
 
 def GetRecordings():
     output = subprocess.check_output(['ls',Prefs['downloadPath']])

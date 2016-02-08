@@ -20,34 +20,12 @@
         "label": "Default video quality (when available)",
         "type": "enum",
         "values": ["High","Low"],
-        "default": "High"
-    },
-
-    {
-        "id": "downloadPath",
-        "type": "text",
-        "label": "Record Path",
-        "default": "./"
-    },
-
-    {
-        "id": "recQuality",
-        "label": "Default recording quality (when available)",
-        "type": "enum",
-        "values": ["High","Low"],
         "default": "Low"
-    },
-
-    {
-        "id": "epgToggle",
-        "label": "EPG: Toggle",
-        "type": "bool",
-        "default": "true"
     },
     
     {
         "id": "epgChanPerPage",
-        "label": "EPG: Channels per page",
+        "label": "Channels per page",
         "type": "enum",
         "values": ["All","10","15","20","25","30"],
         "default": "10"

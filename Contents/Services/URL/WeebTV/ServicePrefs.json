@@ -22,6 +22,6 @@
         "type": "enum",
         "option": "hidden",
         "values": ["High","Low"],
-        "default": "High",
+        "default": "Low",
     }
 ]
