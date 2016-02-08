@@ -124,8 +124,8 @@ def GetParam(params,name,type='text'):
         return None
 
 
-def NormaliseTitle(text):   
-    title = text.strip('~ ').replace('_','').replace(' ','').lower()
-    return title
+def NormaliseTitle(text):
+
+    return text.strip('~ ').replace('_','').replace(' ','').lower() if text else text
 
 
