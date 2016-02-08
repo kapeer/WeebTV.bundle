@@ -28,6 +28,6 @@
         "label": "Channels per page",
         "type": "enum",
         "values": ["All","10","15","20","25","30"],
-        "default": "10"
+        "default": "All"
     }
 ]
