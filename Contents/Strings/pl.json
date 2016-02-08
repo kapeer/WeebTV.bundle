@@ -1,0 +1,14 @@
+{
+    "NAME": "WeebTV",
+    "MENU_LIVE_CHANNELS": "Kanały na żywo",
+    "MENU_FAVOURITE_CHANNELS": "Ulubione kanały",
+    "MENU_MY_ACCOUNT": "Moje konto",
+    "SUBMENU_REMOVE": "Usuń z ulubionych",
+    "SUBMENU_ADD": "Dodaj do ulubionych",
+    "SETTINGS": "Ustawienia",
+    "MESSAGE_NO_CHANNELS": "Brak kanałów. Problem z API?",
+    "MESSAGE_ADDED": "Dodano do ulubionych",
+    "MESSAGE_REMOVED": "Usunięto z ulubionych",
+    "MESSAGE_NOTHING": "Nic do roboty...",
+    "MESSAGE_FAV_NOT_AVAILABLE": "Niektóre ulubione kanały są niedostępne"
+}

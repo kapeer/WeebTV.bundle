@@ -22,7 +22,7 @@
         "values": ["High","Low"],
         "default": "Low"
     },
-    
+
     {
         "id": "epgChanPerPage",
         "label": "Channels per page",
