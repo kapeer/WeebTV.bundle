@@ -10,8 +10,8 @@
     <dict>
         <key>WeebTV</key>
         <dict>
-			<key>Identifier</key>
-			<string>tv.weeb.plexapp.weebtv</string>
+            <key>Identifier</key>
+            <string>com.plexapp.plugins.weebtv</string>
             <key>URLPatterns</key>
             <array>
                 <string>http://weeb.tv/channel/.+</string>

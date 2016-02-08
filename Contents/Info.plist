@@ -3,7 +3,7 @@
 <plist version="1.0">
 <dict>
     <key>CFBundleIdentifier</key>
-    <string>tv.weeb.plexapp.weebtv</string>
+    <string>com.plexapp.plugins.weebtv</string>
     <key>PlexFrameworkVersion</key>
     <string>2</string>
     <key>PlexClientPlatforms</key>
