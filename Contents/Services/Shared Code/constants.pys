@@ -1,5 +1,3 @@
-interiaMain = 'http://programtv.interia.pl'
-stations = interiaMain + '/lista-stacji/programy-wszystkie,pid,0,lid,1'
 mainUrl = 'http://weeb.tv'
 playerUrl = mainUrl + '/api/setplayer'
 apiUrl = mainUrl + '/api/getChannelList'

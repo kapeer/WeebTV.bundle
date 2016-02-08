@@ -5,7 +5,6 @@ from re import findall
 from copy import copy
 from operator import itemgetter
 
-epg = SharedCodeService.epg
 const = SharedCodeService.constants
 api = SharedCodeService.api
 
