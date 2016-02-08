@@ -1,0 +1,77 @@
+api = SharedCodeService.api
+
+liveRtmpSupport = [ClientPlatform.Windows,ClientPlatform.Windows]
+
+####################################################################################################
+def GetItemInfo(url, itemInfo):
+    Log(url)
+    chname = url.split('/')[-1]        
+    dChannels = api.GetChannelsFromApi()
+    cid = multi = 0
+    title = summary = show = source_title = date = thumb = None
+    for channel in dChannels:
+        if chname == dChannels[channel]['channel_name']:
+            Log('{} channel found'.format(chname))
+            cid = dChannels[channel]['cid']
+            multi = dChannels[channel]['multibitrate']
+            title = dChannels[channel]['channel_title']
+            summary = dChannels[channel]['channel_description']
+            thumb = dChannels[channel]['channel_image']
+            break
+
+    if itemInfo == "Metadata":
+        Log('Getting metadata for {}'.format(chname))
+        obj = EpisodeObject(
+            url = url,
+            title = title,
+            summary = summary,
+            show = show,
+            source_title = source_title,
+            originally_available_at = date,
+            thumb = thumb)
+
+    elif itemInfo == "MediaObject":
+        Log('Getting Media Object for {}'.format(chname))        
+        obj = [MediaObject(
+            video_codec = VideoCodec.H264,
+            audio_codec = AudioCodec.AAC,
+            audio_channels = 2,
+            protocol = 'rtmp',
+            optimized_for_streaming = True,
+            height = 360,
+            width = 640,
+            parts = [PartObject(key=Callback(PlayVideo,url=url,cid=cid,multi=multi))]
+            )]
+
+    return obj
+
+
+def PlayVideo(url,cid,multi):
+    if Client.Platform in liveRtmpSupport:
+        Log('{} client platform supports live RTMP streams'.format(Client.Platform))
+        params = api.GetLinkInfo(cid,multi,Prefs['username'],Prefs['password'])
+        Log(params)        
+        swfUrl = params['ticket']
+        rtmp = params['rtmpLink']
+        clip = params['playPath']
+        app = '{}/{}'.format(clip,cid)
+        live = True
+        pageUrl = ' pageUrl=token'
+        return RTMPVideoURL(url=rtmp, clip=clip, app=app, swf_url=swfUrl + pageUrl, live=live)
+    Log('{} client platform does not support live RTMP streams yet'.format(Client.Platform))
+    Log('Redirecting to {}'.format(url))
+    return IndirectResponse(VideoClipObject,key=url)
+
+
+###################################################################################################
+def MetadataObjectForURL(url):
+
+    return GetItemInfo(url,'Metadata')
+
+
+###################################################################################################
+def MediaObjectsForURL(url):
+
+    return GetItemInfo(url,'MediaObject')
+
+

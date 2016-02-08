@@ -1,0 +1,27 @@
+[
+    {
+        "id": "username",
+        "type": "text",
+        "label": "WeebTV username",
+        "default": "",
+        "secure": "true"
+    },
+    
+    {
+        "id": "password",
+        "type": "text",
+        "option": "hidden",
+        "label": "WeebTV password",
+        "default": "",
+        "secure": "true"
+    },
+
+    {
+        "id": "quality",
+        "label": "Default video quality (when available)",
+        "type": "enum",
+        "option": "hidden",
+        "values": ["High","Low"],
+        "default": "High",
+    }
+]

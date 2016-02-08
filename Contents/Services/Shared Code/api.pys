@@ -1,0 +1,131 @@
+# -*- coding: utf-8 -*-
+import constants as const
+
+def Login(username,password):
+    post = {
+        'action': const.loginUrl,
+        'username': username,
+        'userpassword': password,
+        'option': 'andback'
+    }
+
+    HTTP.Request(const.loginUrl, post)
+    check = AccountDetails()
+    Log(check)
+
+    if check:
+        if username in check['username'] or username in check['email']:
+            Log('Successfully logged in to ' + const.loginUrl)
+            return True
+
+    Log("Can't log in to " + const.loginUrl)
+    return False
+
+
+def AccountDetails():
+    dAccount = {}
+    page = HTML.ElementFromURL(url=const.accountUrl)
+    if page:
+        for item in page.body.iter():
+            if item.tag == 'fieldset' and item.get('class') == 'account_main':
+                for utag in item.iter():
+                    if utag.tag == 'li':
+                        if 'Nazwa u' in utag.text:
+                            dAccount['username'] = utag.text.split(':')[-1].strip()
+                            #dAccount['username'] = utag.text
+                        elif 'E-mail' in utag.text:
+                            dAccount['email'] = utag.text.split(':')[-1].strip()
+                            #dAccount['email'] = utag.text
+                        elif 'Ostatnie logowanie' in utag.text:
+                            dAccount['last_logged_in'] = utag.text.split(': ')[-1].strip()
+                            #dAccount['last_logged_in'] = utag.text
+                        elif 'Status konta' in utag.text:
+                            dAccount['account'] = utag.text.split(':')[-1].strip()
+                            #dAccount['account'] = utag.text
+                        elif 'Dni premium' in utag.text:
+                            dAccount['days_left'] = utag.text.split(':')[-1].strip()
+                            #dAccount['days_left'] = utag.text
+                        elif 'Multisesja' in utag.text:
+                            dAccount['multisession'] = utag.text.split(':')[-1].strip()
+                            #dAccount['multisession'] = utag.text
+                        elif 'Lokalizacja' in utag.text:
+                            dAccount['localisation'] = utag.text.split(':')[-1].strip()
+                            #dAccount['localisation'] = utag.text
+    return dAccount
+
+
+def GetChannelsFromApi(option='online-alphabetical'):
+    dRet = {}
+    params = {'username':Prefs['username'],'userpassword':Prefs['password']}
+    try:
+        dOutput = JSON.ObjectFromURL(url='{}&option={}'.format(const.apiUrl,option),values=params,cacheTime=60)
+        
+        #replace cid with normalised title/name
+        for cid in dOutput:
+            title = NormaliseTitle(dOutput[cid]['channel_title'])
+            if not title:
+                title = NormaliseTitle(dOutput[cid]['channel_name'])
+            dRet[title] = dOutput[cid]
+
+    except Exception, err:
+        Log('API error: {}'.format(err))
+
+    return dRet
+    
+
+def GetLinkInfo(cid,multi,username,password):
+    dLink = {}
+    if username and password:
+        values = {'cid':cid,'username':username,'userpassword':password,'platform':const.HOST,}
+    else:
+        values = {'cid':cid,'platform':const.HOST}
+    request = HTTP.Request(url=const.playerUrl,values=values,immediate=True)
+    output = request.content
+    if output:
+        params = GetParams(output)
+        dLink['status'] = GetParam(params, "0")
+        dLink['premium'] = GetParam(params, "5", type='int')
+        dLink['rtmpLink'] = GetParam(params, "10")
+        dLink['playPath'] = GetParam(params, "11")
+        if multi and Prefs['quality'] == 'High':
+            dLink['quality'] = 'HI'
+        else:
+            dLink['quality'] = ''
+        dLink['ticket'] = GetParam(params, "73")
+        dLink['thumb'] = GetParam(params,"8")
+
+    return dLink
+    
+
+def GetParams(paramstring):
+    param=[]
+    if len(paramstring) >= 2:
+        params = paramstring
+        cleanedparams = params.replace('?', '')
+        if (params[len(params)-1] == '/'):
+            params = params[0:len(params)-2]
+        pairsofparams = cleanedparams.split('&')
+        param = {}
+        for i in range(len(pairsofparams)):
+            splitparams = {}
+            splitparams = pairsofparams[i].split('=')
+            if (len(splitparams)) == 2:
+                param[splitparams[0]] = splitparams[1]
+    return param
+
+
+def GetParam(params,name,type='text'):
+    if name in params:
+        param = String.Unquote(params[name],usePlus=False)
+        if type == 'int':
+            param = int(param)
+        return param
+    else:
+        return None
+
+
+def NormaliseTitle(text):   
+    title = text.strip('~ ').replace('_','').replace(' ','').lower()
+    return title
+
+

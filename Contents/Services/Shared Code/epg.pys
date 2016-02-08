@@ -1,0 +1,159 @@
+from time import sleep
+from copy import copy
+import constants as const
+
+cacheTime = 60*60
+timeout = 60
+interval = 2
+
+
+def GetEpgChannels():
+    try:
+        page = None
+        page = HTML.ElementFromURL(url=const.stations,cacheTime=cacheTime,timeout=timeout)
+    except Exception, err:
+        Log('Exception occured: {}'.format(err))
+    
+    dEpg = {}
+    if page:
+        for item in page.body.iter():
+            if "channel-list-item" in str(item.get('class')):
+                for group in item.iterfind('ul'):
+                    for channel in group.iterfind('li'):
+                        path = title = image = name = cid = None
+                        for itag in channel.getchildren():
+                            if itag.get('href') is not None and str(itag.get('href')) != '#':
+                                path = itag.get('href')
+                                items = path.split(',')
+                                name = items[0].strip('/')
+                                cid = items[-1]
+                                title = itag.get('title')
+                            if itag.tag == 'img':
+                                if itag.get('src'):
+                                    image = itag.get('src')
+                        dEpg[name] = {'cid':cid,'title':title,'path':path,'image':image,'programs':{}}
+    return dEpg
+
+
+def GetEpgPrograms(path):
+    try:
+        page = None
+        page = HTML.ElementFromURL(url=const.interiaMain + path,cacheTime=cacheTime,timeout=timeout)
+    except Exception, err:
+        Log('Exception occured: {}'.format(err))
+
+    dEpg = {}
+    #dateNow = Datetime.Now().split()[0]
+    #oDate = Datetime.ParseDate(dateNow)
+    #Log(oDate)
+    i = 1
+    if page:
+        bShow = False
+        for item in page.body.iter():
+            if item.get('class') in ["item odd","item even"]:
+                bShow = True
+            if bShow:
+                if "item-wrap" in str(item.get('class')):
+                    path = name = title = category = image = description = now = None
+                    for itag in item.getchildren():
+                        if "emission-time" in str(itag.get('class')):
+                            for etag in itag.getchildren():
+                                if etag.tag == "img":
+                                    if str(etag.get('class')) == 'tv-icon' and str(etag.get('alt')) == 'trwa':
+                                        now = True
+                        if "emission-name" in str(itag.get('class')):
+                            for atag in itag.getchildren():
+                                if atag.tag == "a":
+                                    title = atag.get('title')
+                                    path = atag.get('href')
+                                    if path:
+                                        name = path.split(',')[0].strip('/')
+                                elif atag.tag == 'img':
+                                    content = atag.get('src')
+                                else:
+                                    for stag in atag.iter():
+                                        if "cat tv-type-spr" in str(stag.get('class')):
+                                            category = stag.text
+                    dEpg[i] = {'name':name,'title':title,'category':category,'path':path,'description':description,'image':image,'now':now}
+                    i = i + 1
+    return dEpg
+
+
+def GetEpgProgramInfo(path):
+    try:
+        page = None
+        page = HTML.ElementFromURL(url=const.interiaMain + path,cacheTime=cacheTime,timeout=timeout)
+    except Exception, err:
+        Log('Exception occured: {}'.format(err))
+        return {}
+    
+    description = None
+    image = None
+    duration = None
+    season = None
+    absolute_index = None
+    duration = None
+    original_title = None
+    episode_title = None
+    
+    dates = []
+    info = []
+    if page:
+        for item in page.head.iter():
+            if item.tag == 'meta':
+                if 'og:description' in str(item.get('property')):
+                    description = item.get('content')
+                elif 'og:image' in str(item.get('property')):
+                    image = item.get('content')
+        for item in page.body.iter():
+            if item.tag == 'meta':
+                if 'startDate' == item.get('itemprop'):
+                    dates.append(item.get('content'))
+            elif item.tag == 'span':
+                if "item" == item.get('class'):
+                    if item.text:
+                        if '\r\n' not in item.text:
+                            info.append(item.text)
+                elif "desc" == item.get('class'):
+                    info.append(item.text.strip() + item.tail.strip())
+        
+        for item in copy(info):
+            Log('ITEM vvv')            
+            Log(item)
+            if 'Sezon:' in item:
+                season = int(item.split(':')[-1])
+                info.remove(item)
+                Log('Found season: {}'.format(season))
+            elif 'Odcinek:' in item:
+                index = item.split(':')[-1]
+                Log('INDEX: {}'.format(index))
+                if ',' in index:
+                    index = index.split(',')
+                elif '/' in index:
+                    index = index.split('/')
+                else:
+                    index = [index]
+                Log('INDEX: {}'.format(index))
+                if season:
+                    info.remove(item)
+                else:
+                    absolute_index = int(index[0])
+                Log('Found absolute_index: {}'.format(absolute_index))
+            elif ' min' in item:
+                duration = int(item.split()[0])
+                duration = duration * const.multiplier
+                info.remove(item)
+                Log('Found duration: {}'.format(duration))
+            elif 'Tytuł oryginalny:' in item:
+                original_title = item.split(':')[-1]
+                Log(original_title)
+                info.remove(item)
+                Log('Found original_title: {}'.format(original_title))
+            elif 'Tytuł odcinka:' in item:
+                episode_title = item.split(':')[-1]
+                Log(episode_title)
+                info.remove(item)
+                Log('Found episode title: {}'.format(episode_title))
+    return {'description':description, 'image':image, 'dates':dates, 'info':info, 'season':season, 'absolute_index':absolute_index, 'duration':duration, 'original_title':original_title, 'episode_title':episode_title}
+    
+    
